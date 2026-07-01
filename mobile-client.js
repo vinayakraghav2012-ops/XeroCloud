@@ -4,7 +4,7 @@
 ────────────────────────────────────────────────────────── */
 (() => {
   // ─── CONFIGURATION & STATIC DATA ───────────────────────────────────────────
-  const API_URL = 'http://localhost:5000';
+  const API_URL = process.env.URL;
 
   const STUN_SERVERS = {
     iceServers: [
