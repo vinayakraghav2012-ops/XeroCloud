@@ -4,7 +4,9 @@
 ────────────────────────────────────────────────────────── */
 (() => {
   // ─── CONFIGURATION & STATIC DATA ───────────────────────────────────────────
-  const API_URL = process.env.URL;
+  const API_URL =
+    window.XEROCLOUD_API_URL ||
+    'https://xerocloud-backend-2.onrender.com';
 
   const STUN_SERVERS = {
     iceServers: [
