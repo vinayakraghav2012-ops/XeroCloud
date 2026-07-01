@@ -1,0 +1,1498 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XeroCloud — Zero Hardware. Infinite Compute.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+@import url('https://api.fontshare.com/v2/css?f[]=hubot-sans@400,700,900&f[]=jet-brains-mono@400,700&display=swap');
+
+:root {
+  --bg: #09040F;
+  --glass: rgba(19,9,31,0.6);
+  --border: #3A1A5E;
+  --border-glow: rgba(140,47,255,0.35);
+  --accent: #8C2FFF;
+  --accent-dim: rgba(140,47,255,0.18);
+  --accent-glow: rgba(140,47,255,0.08);
+  --cyan: #0FF6F6;
+  --cyan-dim: rgba(15,246,246,0.12);
+  --cyan-glow: rgba(15,246,246,0.06);
+  --text: #EDE8F5;
+  --text-dim: rgba(237,232,245,0.45);
+  --text-muted: rgba(237,232,245,0.25);
+  --success: #00E5A0;
+  --warn: #FFB547;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+canvas#void {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px;
+}
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 60px;
+  background: rgba(9,4,15,0.75);
+  backdrop-filter: blur(24px) saturate(1.6);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.nav-logo-mark {
+  width: 28px; height: 28px;
+}
+
+.nav-logo-text {
+  font-family: 'Hubot Sans', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+
+.nav-logo-text span { color: var(--accent); }
+
+.nav-links {
+  display: flex;
+  gap: 2.25rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text); }
+
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.48rem 1.1rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 18px rgba(140,47,255,0.4);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.nav-cta:hover {
+  opacity: 0.88;
+  box-shadow: 0 0 32px rgba(140,47,255,0.6);
+}
+
+.wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 2rem 3rem;
+  text-align: center;
+  position: relative;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  padding: 0.32rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin-bottom: 2.2rem;
+  animation: fadeUp 0.7s ease both;
+}
+
+.eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
+
+.hero-headline {
+  font-family: 'Hubot Sans', sans-serif;
+  font-size: clamp(3.2rem, 8vw, 6.5rem);
+  font-weight: 900;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 1.75rem;
+  animation: fadeUp 0.7s 0.1s ease both;
+  text-transform: uppercase;
+}
+
+.hero-headline .line2 {
+  display: block;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(140,47,255,0.3);
+}
+
+.hero-sub {
+  max-width: 620px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin: 0 auto 2.8rem;
+  animation: fadeUp 0.7s 0.18s ease both;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 4rem;
+  animation: fadeUp 0.7s 0.24s ease both;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.72rem 1.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 24px rgba(140,47,255,0.5);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 40px rgba(140,47,255,0.7);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  color: var(--text);
+  padding: 0.72rem 1.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-glow);
+  background: var(--accent-glow);
+}
+
+.hero-console {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(28px);
+  box-shadow: 0 0 60px rgba(140,47,255,0.12), 0 32px 80px rgba(0,0,0,0.6);
+  animation: fadeUp 0.7s 0.3s ease both;
+}
+
+.console-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.7rem 1rem;
+  background: rgba(19,9,31,0.9);
+  border-bottom: 1px solid var(--border);
+}
+
+.win-dot { width: 10px; height: 10px; border-radius: 50%; }
+.wd-r { background: #FF5F56; }
+.wd-y { background: #FFBD2E; }
+.wd-g { background: #27C93F; }
+
+.console-title {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-left: 4px;
+}
+
+.console-body {
+  padding: 1.25rem 1.5rem;
+  font-size: 0.78rem;
+  line-height: 1.85;
+  min-height: 200px;
+  background: rgba(6,2,12,0.5);
+  text-align: left;
+}
+
+.cl { display: flex; gap: 0.6rem; }
+.cl-prompt { color: var(--accent); user-select: none; }
+.cl-cmd { color: var(--text-dim); }
+.cl-s { color: var(--success); }
+.cl-c { color: var(--cyan); }
+.cl-d { color: var(--text-muted); }
+.cl-w { color: var(--warn); }
+.cl-v { color: #C87BFF; }
+.cl-cursor {
+  display: inline-block;
+  width: 7px; height: 13px;
+  background: var(--accent);
+  vertical-align: middle;
+  animation: cur 1.1s step-end infinite;
+}
+
+@keyframes cur { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.section {
+  position: relative;
+  z-index: 10;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 6rem 2rem;
+}
+
+.section-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.9rem;
+}
+
+.section-title {
+  font-family: 'Hubot Sans', sans-serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 3.5rem;
+  max-width: 640px;
+  text-transform: uppercase;
+}
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto;
+  gap: 1.25rem;
+}
+
+.bcard {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border-radius: 8px;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+
+.bcard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: radial-gradient(ellipse at top left, rgba(140,47,255,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.bcard:hover {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 40px rgba(140,47,255,0.1), 0 20px 60px rgba(0,0,0,0.4);
+  transform: translateY(-2px);
+}
+
+.bc-analyzer { grid-column: span 5; }
+.bc-telemetry { grid-column: span 4; }
+.bc-ledger { grid-column: span 3; }
+.bc-network { grid-column: span 7; }
+.bc-sessions { grid-column: span 5; }
+
+.bcard-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bcard-label::before {
+  content: '';
+  display: block;
+  width: 14px; height: 1px;
+  background: var(--border-glow);
+}
+
+.bcard-title {
+  font-family: 'Hubot Sans', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.bcard-desc {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.score-ring-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0 1.25rem;
+}
+
+.score-ring {
+  position: relative;
+  width: 120px; height: 120px;
+}
+
+.score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+.score-ring-val {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.score-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.probe-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.probe-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.probe-key { color: var(--text-dim); }
+
+.probe-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  margin-left: 0.8rem;
+}
+
+.probe-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(58,26,94,0.5);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.probe-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(140,47,255,0.6);
+  transition: width 1.8s cubic-bezier(0.4,0,0.2,1);
+  width: 0;
+}
+
+.probe-val {
+  font-size: 0.68rem;
+  color: var(--cyan);
+  min-width: 36px;
+  text-align: right;
+}
+
+.fps-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 0 1rem;
+  gap: 0.25rem;
+}
+
+.fps-num {
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: 0 0 30px rgba(15,246,246,0.5);
+  line-height: 1;
+}
+
+.fps-unit {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.packet-chart {
+  width: 100%;
+  height: 52px;
+  margin: 1rem 0 0.5rem;
+}
+
+.chart-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ledger-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.ledger-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.9rem;
+  border-radius: 4px;
+  background: rgba(9,4,15,0.5);
+  border: 1px solid rgba(58,26,94,0.5);
+  font-size: 0.72rem;
+  transition: border-color 0.3s;
+}
+
+.ledger-item.active {
+  border-color: rgba(140,47,255,0.4);
+  background: var(--accent-dim);
+}
+
+.ledger-item-label { color: var(--text-dim); }
+
+.ledger-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.22rem 0.55rem;
+  border-radius: 2px;
+}
+
+.lbg-pending { background: rgba(255,181,71,0.15); color: var(--warn); border: 1px solid rgba(255,181,71,0.3); }
+.lbg-verify { background: rgba(140,47,255,0.18); color: #C87BFF; border: 1px solid rgba(140,47,255,0.4); }
+.lbg-settled { background: rgba(0,229,160,0.12); color: var(--success); border: 1px solid rgba(0,229,160,0.35); box-shadow: 0 0 10px rgba(0,229,160,0.15); }
+
+.usdc-amount {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.network-globe-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0 0.75rem;
+  position: relative;
+}
+
+.node-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.node-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  transition: box-shadow 0.3s;
+}
+
+.node-dot.on {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(0,229,160,0.7);
+}
+
+.node-dot.busy {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(140,47,255,0.7);
+}
+
+.node-dot.off {
+  background: rgba(58,26,94,0.6);
+}
+
+.network-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.nstat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.nstat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.nstat-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.85rem;
+  border-radius: 4px;
+  border: 1px solid rgba(58,26,94,0.5);
+  background: rgba(9,4,15,0.4);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.session-item:hover {
+  border-color: var(--border-glow);
+  background: var(--accent-glow);
+  cursor: pointer;
+}
+
+.si-left { display: flex; flex-direction: column; gap: 0.18rem; }
+.si-name { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+.si-meta { font-size: 0.62rem; color: var(--text-muted); }
+
+.si-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.18rem; }
+
+.si-fps {
+  font-size: 0.68rem;
+  color: var(--cyan);
+}
+
+.si-status {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.18rem 0.45rem;
+  border-radius: 2px;
+  background: rgba(0,229,160,0.12);
+  color: var(--success);
+  border: 1px solid rgba(0,229,160,0.3);
+}
+
+.gateway-section {
+  position: relative;
+  z-index: 10;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 2rem 7rem;
+}
+
+.gateway-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.gateway-card {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(28px);
+  padding: 2.75rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+
+.gateway-card::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; right: -80px;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.gateway-card.gc-host::after {
+  background: radial-gradient(circle, rgba(140,47,255,0.08) 0%, transparent 70%);
+}
+
+.gateway-card.gc-client::after {
+  background: radial-gradient(circle, rgba(15,246,246,0.07) 0%, transparent 70%);
+}
+
+.gateway-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.gateway-card.gc-host:hover { border-color: rgba(140,47,255,0.5); box-shadow: 0 0 50px rgba(140,47,255,0.12), 0 20px 60px rgba(0,0,0,0.5); }
+.gateway-card.gc-client:hover { border-color: rgba(15,246,246,0.4); box-shadow: 0 0 50px rgba(15,246,246,0.08), 0 20px 60px rgba(0,0,0,0.5); }
+
+.gcard-icon {
+  width: 44px; height: 44px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.gcard-icon.gi-host { background: var(--accent-dim); border: 1px solid rgba(140,47,255,0.3); }
+.gcard-icon.gi-client { background: var(--cyan-dim); border: 1px solid rgba(15,246,246,0.25); }
+
+.gcard-tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-bottom: 0.7rem;
+}
+
+.gcard-tag.gt-host { color: var(--accent); }
+.gcard-tag.gt-client { color: var(--cyan); }
+
+.gcard-title {
+  font-family: 'Hubot Sans', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.gcard-desc {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 1.75rem;
+}
+
+.gcard-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.gf-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.gf-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gc-host .gf-dot { background: var(--accent); box-shadow: 0 0 6px rgba(140,47,255,0.8); }
+.gc-client .gf-dot { background: var(--cyan); box-shadow: 0 0 6px rgba(15,246,246,0.8); }
+
+.btn-host {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.8rem 1.6rem;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 24px rgba(140,47,255,0.4);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.btn-host:hover {
+  box-shadow: 0 0 40px rgba(140,47,255,0.65);
+  transform: translateY(-1px);
+}
+
+.btn-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--cyan);
+  padding: 0.8rem 1.6rem;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(15,246,246,0.4);
+  box-shadow: 0 0 20px rgba(15,246,246,0.08);
+  transition: box-shadow 0.2s, background 0.2s, transform 0.15s;
+}
+
+.btn-client:hover {
+  background: rgba(15,246,246,0.07);
+  box-shadow: 0 0 36px rgba(15,246,246,0.18);
+  transform: translateY(-1px);
+}
+
+.divider-line {
+  position: absolute;
+  left: 50%; top: 2rem; bottom: 2rem;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border), var(--border-glow), var(--border), transparent);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.divider-label {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+}
+
+.gw-wrapper {
+  position: relative;
+}
+
+footer {
+  position: relative;
+  z-index: 10;
+  border-top: 1px solid var(--border);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: rgba(9,4,15,0.7);
+  backdrop-filter: blur(16px);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.footer-copy {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.footer-links {
+  display: flex;
+  gap: 1.75rem;
+}
+
+.footer-links a {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  font-weight: 700;
+}
+
+.footer-links a:hover { color: var(--text-dim); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+
+.reveal.vis {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 1024px) {
+  .bc-analyzer { grid-column: span 6; }
+  .bc-telemetry { grid-column: span 6; }
+  .bc-ledger { grid-column: span 12; }
+  .bc-network { grid-column: span 12; }
+  .bc-sessions { grid-column: span 12; }
+  .node-grid { grid-template-columns: repeat(10, 1fr); }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 0 1.25rem; }
+  .nav-links { display: none; }
+  .hero { padding: 80px 1.25rem 3rem; }
+  .section, .gateway-section { padding: 4rem 1.25rem; }
+  .bc-analyzer, .bc-telemetry, .bc-ledger, .bc-network, .bc-sessions { grid-column: span 12; }
+  .gateway-grid { grid-template-columns: 1fr; }
+  .gw-wrapper .divider-line, .gw-wrapper .divider-label { display: none; }
+  footer { padding: 1.5rem 1.25rem; flex-direction: column; align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="void"></canvas>
+<div class="grain"></div>
+
+<nav>
+  <a href="#" class="nav-logo">
+    <svg class="nav-logo-mark" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="14,2 26,22 2,22" fill="none" stroke="#8C2FFF" stroke-width="1.8"/>
+      <circle cx="14" cy="14" r="3.5" fill="#8C2FFF"/>
+      <circle cx="14" cy="2" r="1.5" fill="#8C2FFF"/>
+      <circle cx="26" cy="22" r="1.5" fill="#0FF6F6"/>
+      <circle cx="2" cy="22" r="1.5" fill="#8C2FFF"/>
+    </svg>
+    <span class="nav-logo-text">XERO<span>CLOUD</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#matrix">Network</a></li>
+    <li><a href="#gateway">Get Started</a></li>
+    <li><a href="#">Docs</a></li>
+    <li><a href="#">Polygon Explorer</a></li>
+  </ul>
+  <a href="#gateway" class="nav-cta">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1 L12 6.5 L6.5 12 M1 6.5 L12 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Launch Node
+  </a>
+</nav>
+
+<div class="wrapper">
+
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      GLOBAL COMPUTE MESH — 247 NODES ACTIVE
+    </div>
+    <h1 class="hero-headline">
+      ZERO HARDWARE.<br>
+      <span class="line2">INFINITE COMPUTE.</span>
+    </h1>
+    <p class="hero-sub">Stream GPU-accelerated desktop environments directly to any browser. Earn XeroCoins through micro-tasks. Monetize your idle rig via automated USDC settlements on Polygon.</p>
+    <div class="hero-actions">
+      <a href="create.html" class="btn-primary">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2 L13 7.5 L7.5 13 M2 7.5 L13 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Launch Instant Node
+      </a>
+      <a href="#matrix" class="btn-ghost">Explore Network Matrix</a>
+    </div>
+    <div class="hero-console">
+      <div class="console-titlebar">
+        <span class="win-dot wd-r"></span>
+        <span class="win-dot wd-y"></span>
+        <span class="win-dot wd-g"></span>
+        <span class="console-title">xerocloud-node — terminal — zsh</span>
+      </div>
+      <div class="console-body" id="consoleBody"></div>
+    </div>
+  </section>
+
+  <section class="section" id="matrix">
+    <div class="reveal">
+      <p class="section-eyebrow">Network Matrix</p>
+      <h2 class="section-title">A live mesh of hardware, telemetry, and settled value.</h2>
+    </div>
+    <div class="bento reveal">
+      <div class="bcard bc-analyzer reveal">
+        <div class="bcard-label">Hardware Analyzer</div>
+        <div class="bcard-title">Client Device Profile</div>
+        <div class="bcard-desc">Passive capability scan — zero performance impact.</div>
+        <div class="score-ring-wrap">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(58,26,94,0.5)" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#8C2FFF" stroke-width="10"
+                stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"
+                id="scoreArc" style="transition: stroke-dashoffset 2s cubic-bezier(0.4,0,0.2,1)"/>
+            </svg>
+            <div class="score-ring-val">
+              <span class="score-num" id="scoreNum">—</span>
+              <span class="score-label">SCORE</span>
+            </div>
+          </div>
+        </div>
+        <div class="probe-rows" id="probeRows"></div>
+      </div>
+
+      <div class="bcard bc-telemetry reveal">
+        <div class="bcard-label">Live Telemetry</div>
+        <div class="bcard-title">Stream Health</div>
+        <div class="bcard-desc">WebRTC P2P channel metrics.</div>
+        <div class="fps-display">
+          <span class="fps-num" id="fpsNum">60</span>
+          <span class="fps-unit">FRAMES · PER · SECOND</span>
+        </div>
+        <svg class="packet-chart" id="packetChart" viewBox="0 0 260 52" preserveAspectRatio="none">
+          <path id="chartPath" fill="none" stroke="#8C2FFF" stroke-width="1.5" stroke-linejoin="round" fill-opacity="1"/>
+        </svg>
+        <div class="chart-label">
+          <span>DOWNLINK PACKETS</span>
+          <span id="chartKbps">— KB/s</span>
+        </div>
+      </div>
+
+      <div class="bcard bc-ledger reveal">
+        <div class="bcard-label">Escrow Ledger</div>
+        <div class="bcard-title">XeroCoin Flow</div>
+        <div class="bcard-desc">Polygon USDC settlements.</div>
+        <div class="ledger-status" id="ledgerStatus"></div>
+      </div>
+
+      <div class="bcard bc-network reveal">
+        <div class="bcard-label">Global Host Network</div>
+        <div class="bcard-title">Distributed Compute Mesh</div>
+        <div class="bcard-desc">Active GPU/CPU nodes across all regions. Green = available · Violet = in session.</div>
+        <div class="node-grid" id="nodeGrid"></div>
+        <div class="network-stats">
+          <div class="nstat"><span class="nstat-val" id="nActive">—</span><span class="nstat-label">ACTIVE HOSTS</span></div>
+          <div class="nstat"><span class="nstat-val" id="nSessions">—</span><span class="nstat-label">LIVE SESSIONS</span></div>
+          <div class="nstat"><span class="nstat-val" id="nPayout">—</span><span class="nstat-label">USDC PAID TODAY</span></div>
+          <div class="nstat"><span class="nstat-val" id="nLatency">—</span><span class="nstat-label">AVG LATENCY</span></div>
+        </div>
+      </div>
+
+      <div class="bcard bc-sessions reveal">
+        <div class="bcard-label">Active Sessions</div>
+        <div class="bcard-title">Live Compute Sessions</div>
+        <div class="sessions-list" id="sessionsList"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="gateway-section" id="gateway">
+    <div class="reveal">
+      <p class="section-eyebrow">Onboarding Gateway</p>
+      <h2 class="section-title">Two roles. One network. Choose your entry point.</h2>
+    </div>
+    <div class="gw-wrapper">
+      <div class="gateway-grid">
+        <div class="gateway-card gc-host reveal">
+          <div class="gcard-icon gi-host">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="2" y="5" width="18" height="12" rx="0" stroke="#8C2FFF" stroke-width="1.5"/>
+              <path d="M7 17v2M15 17v2M5 21h12" stroke="#8C2FFF" stroke-width="1.5" stroke-linecap="round"/>
+              <rect x="6" y="8" width="10" height="6" rx="0" fill="#8C2FFF" fill-opacity="0.2"/>
+              <path d="M9 11h4" stroke="#8C2FFF" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="gcard-tag gt-host">FOR DESKTOP HOSTS</p>
+          <h3 class="gcard-title">Monetize Your Idle GPU</h3>
+          <p class="gcard-desc">Install the XeroCloud daemon. Your machine starts accepting encrypted compute sessions and settling USDC automatically — no bank required, no invoices.</p>
+          <div class="gcard-features">
+            <div class="gf-item"><span class="gf-dot"></span>Automated USDC payouts via Polygon smart contract</div>
+            <div class="gf-item"><span class="gf-dot"></span>Isolated Docker sandbox per session</div>
+            <div class="gf-item"><span class="gf-dot"></span>60-second session acceptance window</div>
+            <div class="gf-item"><span class="gf-dot"></span>Auto workspace save and zip on session end</div>
+          </div>
+          <a href="#" class="btn-host">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1v9M3 7l4.5 4.5L12 7M2 13h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download Host Daemon (.exe)
+          </a>
+        </div>
+        <div class="gateway-card gc-client reveal">
+          <div class="gcard-icon gi-client">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="6" y="2" width="10" height="18" rx="0" stroke="#0FF6F6" stroke-width="1.5"/>
+              <path d="M9 5h4" stroke="#0FF6F6" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="11" cy="17" r="1.2" fill="#0FF6F6"/>
+              <rect x="8" y="8" width="6" height="7" rx="0" fill="#0FF6F6" fill-opacity="0.12"/>
+            </svg>
+          </div>
+          <p class="gcard-tag gt-client">FOR MOBILE CREATORS</p>
+          <h3 class="gcard-title">Run Blender From Your Phone</h3>
+          <p class="gcard-desc">Open the web app on any device. Complete micro-tasks to earn XeroCoins, then stream a full GPU-accelerated desktop environment — no install, no account needed to start.</p>
+          <div class="gcard-features">
+            <div class="gf-item"><span class="gf-dot"></span>Device capability score selects optimal stream tier</div>
+            <div class="gf-item"><span class="gf-dot"></span>Touch overlay maps gestures to desktop events</div>
+            <div class="gf-item"><span class="gf-dot"></span>Earn via BitLabs &amp; CPX Research micro-tasks</div>
+            <div class="gf-item"><span class="gf-dot"></span>5-minute auto-save warning before credit expiry</div>
+          </div>
+          <a href="#" class="btn-client">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2 L13 7.5 L7.5 13 M2 7.5 L13 7.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Launch Instant Node (Web UI)
+          </a>
+        </div>
+      </div>
+      <div class="divider-line"></div>
+      <div class="divider-label">OR</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <a href="#" class="footer-brand">
+    <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <polygon points="14,2 26,22 2,22" fill="none" stroke="#8C2FFF" stroke-width="1.8"/>
+      <circle cx="14" cy="14" r="3" fill="#8C2FFF"/>
+    </svg>
+    <span class="nav-logo-text">XERO<span>CLOUD</span></span>
+  </a>
+  <div class="footer-links">
+    <a href="#">Documentation</a>
+    <a href="#">Smart Contract</a>
+    <a href="#">Status</a>
+    <a href="#">GitHub</a>
+  </div>
+  <span class="footer-copy">© 2026 XeroCloud · Polygon Network · USDC · WebRTC P2P</span>
+</footer>
+
+<script>
+(function(){
+
+const $ = id => document.getElementById(id);
+
+(function voidCanvas(){
+  const c = $('void'), ctx = c.getContext('2d');
+  let W, H, pts=[], edges=[], pkts=[], frame=0;
+  const resize=()=>{W=c.width=innerWidth;H=c.height=innerHeight;};
+  resize(); addEventListener('resize', ()=>{resize(); buildPts();});
+  function buildPts(){
+    const n=Math.floor(W*H/22000);
+    pts=Array.from({length:n},()=>({
+      x:Math.random()*W, y:Math.random()*H,
+      vx:(Math.random()-.5)*.06, vy:(Math.random()-.5)*.06,
+      r:Math.random()*1.8+0.8, a:Math.random()*.4+.1,
+      p:Math.random()*Math.PI*2, ps:Math.random()*.015+.005
+    }));
+  }
+  buildPts();
+  function rebuildEdges(){
+    edges=[];
+    const D=150;
+    for(let i=0;i<pts.length;i++){
+      let c2=0;
+      for(let j=i+1;j<pts.length&&c2<3;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<D){edges.push({a:i,b:j,d});c2++;}
+      }
+    }
+  }
+  function spawnPkt(){
+    if(!edges.length) return;
+    const e=edges[Math.floor(Math.random()*edges.length)];
+    pkts.push({ai:e.a,bi:e.b,t:0,s:Math.random()*.012+.005});
+  }
+  function tick(){
+    requestAnimationFrame(tick);
+    ctx.clearRect(0,0,W,H);
+    frame++;
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.p+=p.ps;
+      if(p.x<-10||p.x>W+10){p.vx*=-1;} if(p.y<-10||p.y>H+10){p.vy*=-1;}
+      p.x=Math.max(-8,Math.min(W+8,p.x)); p.y=Math.max(-8,Math.min(H+8,p.y));
+    });
+    if(frame%10===0) rebuildEdges();
+    edges.forEach(e=>{
+      const a=pts[e.a],b=pts[e.b];
+      const al=(1-e.d/150)*.09;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+      ctx.strokeStyle=`rgba(140,47,255,${al})`; ctx.lineWidth=.7; ctx.stroke();
+    });
+    if(frame%15===0) spawnPkt();
+    pkts=pkts.filter(p=>p.t<1);
+    pkts.forEach(p=>{
+      p.t+=p.s;
+      const a=pts[p.ai],b=pts[p.bi];
+      const x=a.x+(b.x-a.x)*p.t, y=a.y+(b.y-a.y)*p.t;
+      ctx.beginPath(); ctx.arc(x,y,2.2,0,Math.PI*2);
+      ctx.fillStyle=`rgba(15,246,246,${.9-p.t*.5})`;
+      ctx.shadowBlur=10; ctx.shadowColor='#0FF6F6';
+      ctx.fill(); ctx.shadowBlur=0;
+    });
+    pts.forEach(p=>{
+      const a=p.a*(0.65+0.35*Math.sin(p.p));
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(140,47,255,${a})`;
+      ctx.shadowBlur=6; ctx.shadowColor='rgba(140,47,255,.5)';
+      ctx.fill(); ctx.shadowBlur=0;
+    });
+  }
+  tick();
+})();
+
+(function heroConsole(){
+  const body=$('consoleBody');
+  if(!body) return;
+  const lines=[
+    {t:'cmd', text:'./xerocloud-node --start --tier=pro'},
+    {t:'d', text:'[00:00:01] Initializing XeroCloud runtime v2.4.1…'},
+    {t:'s', text:'[00:00:02] ✓ GPU detected: NVIDIA RTX 3080 (10GB VRAM)'},
+    {t:'s', text:'[00:00:02] ✓ CUDA 12.1 toolkit verified'},
+    {t:'d', text:'[00:00:03] Connecting to Polygon mainnet (chain 137)…'},
+    {t:'s', text:'[00:00:04] ✓ web3.py connected · Smart contract 0xXCl...4f2a'},
+    {t:'s', text:'[00:00:04] ✓ Wallet 0xAb12...eF34 registered · Tier: PRO'},
+    {t:'d', text:'[00:00:05] Registering node on XeroCloud mesh…'},
+    {t:'c', text:'[00:00:06] ✓ Node ID: xc-7f3a2c · 247 peers visible'},
+    {t:'s', text:'[00:00:06] ✓ WebRTC signaling channel: CONNECTED'},
+    {t:'s', text:'[00:00:07] ✓ Docker isolation sandbox: READY'},
+    {t:'c', text:'[00:00:07] ★ XeroCloud-Node: Connected — Awaiting session…'},
+  ];
+  let i=0;
+  function addLine(){
+    if(i>=lines.length){
+      const cur=document.createElement('span');
+      cur.className='cl-cursor';
+      body.appendChild(cur);
+      setInterval(()=>{
+        const cl=body.querySelector('.cl-cursor');
+        if(!cl) return;
+        const t=new Date();
+        const ev=[
+          `[${t.toLocaleTimeString()}] → Session request from mobile client (US-East)`,
+          `[${t.toLocaleTimeString()}] ✓ Session accepted · Launching Blender sandbox`,
+          `[${t.toLocaleTimeString()}] → WebRTC stream established · 720p@60fps · 28ms`,
+          `[${t.toLocaleTimeString()}] → Credit ledger: -1 XRC/min · Balance: 340 XRC`,
+          `[${t.toLocaleTimeString()}] ✓ Session closed · Auto-save triggered · USDC queued`,
+          `[${t.toLocaleTimeString()}] → Idle — Awaiting next request…`,
+        ];
+        const line=document.createElement('div');
+        line.className='cl';
+        line.innerHTML=`<span class="cl-c">${ev[Math.floor(Math.random()*ev.length)]}</span>`;
+        body.insertBefore(line, cl);
+        body.scrollTop=body.scrollHeight;
+        while(body.children.length>22) body.removeChild(body.firstChild);
+      }, 3800+Math.random()*2200);
+      return;
+    }
+    const l=lines[i++];
+    const div=document.createElement('div');
+    div.className='cl';
+    if(l.t==='cmd'){
+      div.innerHTML=`<span class="cl-prompt">❯</span><span class="cl-cmd">${l.text}</span>`;
+    } else {
+      const cls={s:'cl-s',c:'cl-c',d:'cl-d',w:'cl-w',v:'cl-v'}[l.t]||'cl-d';
+      div.innerHTML=`<span class="${cls}">${l.text}</span>`;
+    }
+    body.appendChild(div);
+    body.scrollTop=body.scrollHeight;
+    setTimeout(addLine, i<3?300:i<8?420:260);
+  }
+  setTimeout(addLine, 600);
+})();
+
+(function deviceProbe(){
+  const rowsEl=$('probeRows'), arcEl=$('scoreArc'), numEl=$('scoreNum');
+  if(!rowsEl) return;
+  const metrics=[
+    {key:'RAM', apiVal: ()=>navigator.deviceMemory||null, fmt: v=>v?v+'GB':'—', score: v=>v>=8?30:v>=4?20:v>=2?12:5},
+    {key:'NETWORK', apiVal: ()=>(navigator.connection||{}).downlink||null, fmt: v=>v?v+' Mbps':'—', score: v=>v>=50?25:v>=20?18:v>=5?10:3},
+    {key:'CPU CORES', apiVal: ()=>navigator.hardwareConcurrency||null, fmt: v=>v?v+' cores':'—', score: v=>v>=8?25:v>=4?18:v>=2?10:4},
+    {key:'WEBGL', apiVal: ()=>{try{const c=document.createElement('canvas');const gl=c.getContext('webgl');return gl?1:0;}catch{return 0;}}, fmt: v=>v?'AVAILABLE':'NONE', score: v=>v?20:0},
+  ];
+  let total=0;
+  metrics.forEach((m,i)=>{
+    setTimeout(()=>{
+      const v=m.apiVal();
+      const s=m.score(v);
+      total+=s;
+      const pct=Math.round((s/30)*100);
+      const row=document.createElement('div');
+      row.className='probe-row';
+      row.innerHTML=`<span class="probe-key">${m.key}</span><div class="probe-bar-wrap"><div class="probe-bar"><div class="probe-fill" style="width:0%" id="pf${i}"></div></div><span class="probe-val">${m.fmt(v)}</span></div>`;
+      rowsEl.appendChild(row);
+      setTimeout(()=>{ const f=$(`pf${i}`); if(f) f.style.width=Math.min(100,pct)+'%'; },80);
+      if(i===metrics.length-1){
+        const finalScore=Math.min(100,Math.round(total*1.1));
+        setTimeout(()=>{
+          if(numEl) numEl.textContent=finalScore;
+          if(arcEl){
+            const circ=314;
+            arcEl.style.strokeDashoffset=circ-(circ*finalScore/100);
+          }
+          window.xeroDeviceScore=finalScore;
+        },400);
+      }
+    }, 700+i*380);
+  });
+})();
+
+(function telemetry(){
+  const fpsEl=$('fpsNum'), chartEl=$('chartPath'), kbpsEl=$('chartKbps');
+  if(!fpsEl) return;
+  const W2=260, H2=52, points=Array(52).fill(H2*0.4);
+  function buildPath(){
+    if(!points.length) return 'M0,52 L260,52';
+    let d=`M0,${points[0]}`;
+    for(let i=1;i<points.length;i++) d+=` L${(i/(points.length-1))*W2},${points[i]}`;
+    d+=` L${W2},${H2} L0,${H2} Z`;
+    return d;
+  }
+  setInterval(()=>{
+    const v=H2*0.1+Math.random()*H2*0.7;
+    points.shift(); points.push(v);
+    if(chartEl) chartEl.setAttribute('d',buildPath());
+    const fps=55+Math.round(Math.random()*8);
+    if(fpsEl) fpsEl.textContent=fps;
+    const kbps=180+Math.round(Math.random()*140);
+    if(kbpsEl) kbpsEl.textContent=kbps+' KB/s';
+  },120);
+})();
+
+(function ledger(){
+  const el=$('ledgerStatus');
+  if(!el) return;
+  const items=[
+    {label:'Session #7f3a · 0.12 USDC',amt:'0.12 USDC',state:0},
+    {label:'Session #2b8c · 0.08 USDC',amt:'0.08 USDC',state:1},
+    {label:'Session #9e1f · 0.21 USDC',amt:'0.21 USDC',state:2},
+    {label:'Session #4d5a · 0.06 USDC',amt:'0.06 USDC',state:0},
+  ];
+  function render(){
+    el.innerHTML=items.map(it=>{
+      const [cls,lbl]=[
+        ['lbg-pending','PENDING'],
+        ['lbg-verify','VERIFYING'],
+        ['lbg-settled','SETTLED']
+      ][it.state];
+      return `<div class="ledger-item ${it.state===1?'active':''}">
+        <div>
+          <div class="ledger-item-label">${it.label}</div>
+          <div class="usdc-amount" style="margin-top:2px">${it.amt} · Polygon</div>
+        </div>
+        <span class="ledger-badge ${cls}">${lbl}</span>
+      </div>`;
+    }).join('');
+  }
+  render();
+  setInterval(()=>{
+    items.forEach(it=>{ if(Math.random()<.25) it.state=Math.min(2,(it.state+1)); });
+    render();
+  },2400);
+})();
+
+(function network(){
+  const gridEl=$('nodeGrid');
+  const nA=$('nActive'), nS=$('nSessions'), nP=$('nPayout'), nL=$('nLatency');
+  if(!gridEl) return;
+  const COUNT=48;
+  let nodes=Array.from({length:COUNT},()=>({s:Math.random()<.5?'on':Math.random()<.6?'busy':'off'}));
+  function renderGrid(){
+    gridEl.innerHTML=nodes.map(n=>`<div class="node-dot ${n.s}"></div>`).join('');
+  }
+  renderGrid();
+  let active=nodes.filter(n=>n.s!=='off').length;
+  let sessions=nodes.filter(n=>n.s==='busy').length;
+  let payout=42.18, latency=31;
+  function update(){
+    nA&&(nA.textContent=active);
+    nS&&(nS.textContent=sessions);
+    nP&&(nP.textContent='$'+payout.toFixed(2));
+    nL&&(nL.textContent=latency+'ms');
+  }
+  update();
+  setInterval(()=>{
+    nodes.forEach(n=>{
+      if(Math.random()<.04){
+        const r=Math.random();
+        n.s=r<.45?'on':r<.72?'busy':'off';
+      }
+    });
+    active=nodes.filter(n=>n.s!=='off').length;
+    sessions=nodes.filter(n=>n.s==='busy').length;
+    payout+=Math.random()*.08;
+    latency=Math.max(18,Math.min(60,latency+(Math.random()*4-2)));
+    latency=Math.round(latency);
+    renderGrid();
+    update();
+  },3200);
+})();
+
+(function sessions(){
+  const el=$('sessionsList');
+  if(!el) return;
+  const apps=['Blender 4.2','DaVinci Resolve 19','Unreal Engine 5','Cinema 4D R26','After Effects 2024'];
+  const hosts=['xc-7f3a · RTX 3080','xc-2b8c · RTX 4070','xc-9e1f · RX 6800 XT','xc-4d5a · RTX 3090'];
+  const regions=['US-East','EU-Central','AS-Tokyo','US-West'];
+  function mkSession(){
+    return {
+      app:apps[Math.floor(Math.random()*apps.length)],
+      host:hosts[Math.floor(Math.random()*hosts.length)],
+      region:regions[Math.floor(Math.random()*regions.length)],
+      fps:Math.round(55+Math.random()*10),
+      lat:Math.round(15+Math.random()*50),
+    };
+  }
+  let list=Array.from({length:4},mkSession);
+  function render(){
+    el.innerHTML=list.map(s=>`
+      <div class="session-item">
+        <div class="si-left">
+          <span class="si-name">${s.app}</span>
+          <span class="si-meta">${s.host} · ${s.region} · ${s.lat}ms</span>
+        </div>
+        <div class="si-right">
+          <span class="si-fps">${s.fps} FPS</span>
+          <span class="si-status">STREAMING</span>
+        </div>
+      </div>`).join('');
+  }
+  render();
+  setInterval(()=>{
+    list=list.map(s=>({...s,fps:Math.round(55+Math.random()*10),lat:Math.round(15+Math.random()*50)}));
+    if(Math.random()<.2){
+      list.splice(Math.floor(Math.random()*list.length),1,mkSession());
+    }
+    render();
+  },2800);
+})();
+
+(function reveal(){
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('vis'); });
+  },{threshold:.08});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  document.querySelectorAll('.bcard, .gateway-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{
+      el.style.boxShadow='0 0 40px rgba(140,47,255,0.14), 0 20px 60px rgba(0,0,0,0.4)';
+    });
+    el.addEventListener('mouseleave',()=>{ el.style.boxShadow=''; });
+  });
+})();
+
+(function navBar(){
+  const nav=document.querySelector('nav');
+  addEventListener('scroll',()=>{
+    nav.style.borderBottomColor=scrollY>20?'rgba(140,47,255,0.25)':'#3A1A5E';
+  });
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{
+      const t=document.querySelector(a.getAttribute('href'));
+      if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});}
+    });
+  });
+})();
+
+})();
+</script>
+</body>
+</html>
