@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>XeroOS Remote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Electrolize&family=Audiowide&display=swap" rel="stylesheet">
+<style>
+/* ─── RESET & BASE ───────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+:root{
+  --bg:#09040F;--bg2:#0E0619;
+  --purple:#8C2FFF;--cyan:#0FF6F6;--green:#00FF88;
+  --danger:#FF3355;--warn:#FFB800;
+  --text:#EDE8F5;--dim:#9B91B8;
+  --glass-p:rgba(140,47,255,0.10);--glass-c:rgba(15,246,246,0.08);
+  --border-p:rgba(140,47,255,0.35);--border-c:rgba(15,246,246,0.28);
+  --glow-p:0 0 16px rgba(140,47,255,0.55);--glow-c:0 0 16px rgba(15,246,246,0.55);
+  --glow-g:0 0 14px rgba(0,255,136,0.5);
+  --font:'Electrolize',system-ui,sans-serif;
+  --font-hud:'Audiowide',monospace;
+}
+html,body{height:100%;overflow:hidden;background:#000;color:var(--text);font-family:var(--font);touch-action:none}
+button,input{font:inherit}
+button:active{transform:scale(0.96)}
+
+/* ─── CLIP SHAPES (cyberpunk geometric) ─────────────────────────────────────── */
+.clip-sm{clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px)}
+.clip-md{clip-path:polygon(12px 0%,100% 0%,100% calc(100% - 12px),calc(100% - 12px) 100%,0% 100%,0% 12px)}
+.clip-lg{clip-path:polygon(16px 0%,100% 0%,100% calc(100% - 16px),calc(100% - 16px) 100%,0% 100%,0% 16px)}
+
+/* ─── CONNECTION SCREEN ──────────────────────────────────────────────────────── */
+#connection-screen{
+  position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:22px;
+  background:radial-gradient(ellipse at 50% 10%,rgba(140,47,255,.20) 0%,transparent 55%),var(--bg)
+}
+#connection-screen.hidden{display:none}
+.cs-logo{font-family:var(--font-hud);font-size:11px;letter-spacing:5px;color:var(--cyan);text-shadow:var(--glow-c)}
+.cs-title{font-family:var(--font-hud);font-size:52px;line-height:.88;letter-spacing:4px;text-align:center;
+  background:linear-gradient(160deg,var(--text) 30%,var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cs-sub{font-size:10px;letter-spacing:3px;color:var(--dim);text-align:center}
+.cs-node-row{width:min(360px,100%);display:flex;gap:8px}
+#cs-node-input{
+  min-width:0;flex:1;background:rgba(255,255,255,.04);
+  border:1px solid var(--border-p);color:var(--text);
+  padding:14px 12px;letter-spacing:2px;outline:none;font-family:var(--font);font-size:12px;
+}
+#cs-node-input:focus{border-color:var(--cyan);box-shadow:var(--glow-c)}
+#copy-node-btn{
+  padding:0 14px;border:1px solid var(--border-c);background:var(--glass-c);
+  color:var(--cyan);cursor:pointer;letter-spacing:1px;font-size:10px;
+}
+#cs-connect-btn{
+  width:min(360px,100%);padding:15px;cursor:pointer;color:var(--text);
+  background:linear-gradient(135deg,rgba(140,47,255,.35),rgba(15,246,246,.12));
+  border:1px solid var(--purple);letter-spacing:3px;font-size:12px;
+  transition:box-shadow .2s,border-color .2s;
+}
+#cs-connect-btn:hover{box-shadow:var(--glow-p);border-color:var(--cyan)}
+#cs-connect-btn:disabled{opacity:.5;cursor:not-allowed}
+#stream-status-text{min-height:18px;font-size:10px;letter-spacing:2px;color:var(--cyan);text-align:center}
+#error-text{min-height:16px;font-size:10px;letter-spacing:1px;color:var(--danger);text-align:center}
+
+/* ─── STREAM SHELL ───────────────────────────────────────────────────────────── */
+#stream-shell{position:fixed;inset:0;display:flex;flex-direction:column;background:#000}
+#stream-shell.hidden{display:none}
+
+/* Top bar */
+.stream-topbar{
+  height:38px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 10px;background:rgba(9,4,15,.97);
+  border-bottom:1px solid var(--border-p);z-index:50;flex-shrink:0;
+}
+.top-left,.top-right{display:flex;align-items:center;gap:8px}
+.brand{font-family:var(--font-hud);font-size:10px;letter-spacing:3px;color:var(--cyan);text-shadow:var(--glow-c)}
+#node-label,#latency-label{font-size:9px;letter-spacing:1.5px;color:var(--dim);white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.topbar-btn{
+  padding:4px 9px;font-size:9px;letter-spacing:1.5px;cursor:pointer;
+  border:1px solid var(--border-c);background:var(--glass-c);color:var(--text);
+  transition:border-color .2s,box-shadow .2s;
+}
+.topbar-btn:hover{border-color:var(--cyan);box-shadow:var(--glow-c)}
+.topbar-btn.danger{border-color:rgba(255,51,85,.5);color:var(--danger);background:rgba(255,51,85,.08)}
+.topbar-btn.danger:hover{box-shadow:0 0 12px rgba(255,51,85,.5)}
+
+/* ─── VIDEO WRAP ─────────────────────────────────────────────────────────────── */
+#video-wrap{
+  position:relative;flex:1;min-height:0;display:flex;
+  align-items:center;justify-content:center;background:#000;overflow:hidden;touch-action:none;
+}
+#remote-stream-video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
+#video-hint{
+  position:absolute;inset:auto 0 50%;transform:translateY(50%);
+  text-align:center;color:rgba(237,232,245,.35);font-size:10px;letter-spacing:4px;pointer-events:none;
+}
+#touch-cursor{
+  position:absolute;width:20px;height:20px;border:2px solid var(--cyan);border-radius:50%;
+  transform:translate(-50%,-50%);opacity:0;pointer-events:none;
+  box-shadow:0 0 12px rgba(15,246,246,.6);transition:opacity .1s;
+}
+#touch-cursor.visible{opacity:1}
+
+/* ─── STREAM STATS PANEL ─────────────────────────────────────────────────────── */
+#stream-stats{
+  position:absolute;right:8px;top:8px;display:none;padding:10px 14px;
+  background:rgba(9,4,15,.92);border:1px solid var(--border-p);
+  font-size:10px;line-height:2;color:var(--dim);z-index:30;
+}
+#stream-stats.visible{display:block}
+#stream-stats span{color:var(--cyan)}
+
+/* ─── CONTROL PANEL DROPDOWN (horizontal, HUD-style) ─────────────────────────── */
+#ctrl-toggle-btn{
+  position:absolute;top:46px;left:50%;transform:translateX(-50%);
+  z-index:60;padding:5px 20px 4px;cursor:pointer;
+  background:rgba(9,4,15,.95);border:1px solid var(--border-p);
+  border-top:none;color:var(--dim);font-size:9px;letter-spacing:2px;
+  transition:color .2s,border-color .2s;
+}
+#ctrl-toggle-btn:hover,#ctrl-toggle-btn.open{color:var(--cyan);border-color:var(--cyan)}
+#ctrl-toggle-btn::after{
+  content:'▼';display:inline-block;margin-left:6px;font-size:7px;transition:transform .25s;
+}
+#ctrl-toggle-btn.open::after{transform:rotate(180deg)}
+
+#ctrl-dropdown{
+  position:absolute;top:73px;left:50%;transform:translateX(-50%);
+  z-index:59;width:min(600px,95vw);
+  background:rgba(9,4,15,.97);border:1px solid var(--border-p);
+  display:none;flex-direction:column;gap:0;
+  box-shadow:0 8px 40px rgba(0,0,0,.7),var(--glow-p);
+}
+#ctrl-dropdown.open{display:flex}
+
+/* Bar 1: Mode selector */
+.ctrl-bar{display:flex;align-items:center;padding:8px 10px;gap:8px;border-bottom:1px solid rgba(140,47,255,.18)}
+.ctrl-bar:last-child{border-bottom:none}
+.ctrl-bar-label{font-size:9px;letter-spacing:2px;color:var(--dim);white-space:nowrap;min-width:42px}
+.mode-btn{
+  flex:1;padding:7px 4px;font-size:9px;letter-spacing:1.5px;cursor:pointer;
+  border:1px solid var(--border-p);background:var(--glass-p);color:var(--dim);
+  transition:all .2s;
+}
+.mode-btn:hover{color:var(--text);border-color:var(--purple)}
+.mode-btn.active{
+  background:linear-gradient(135deg,rgba(140,47,255,.3),rgba(15,246,246,.12));
+  border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow-c);
+}
+
+/* Bar 2: Utilities */
+.ctrl-util-row{display:flex;align-items:center;gap:10px;flex:1}
+.opacity-group{display:flex;align-items:center;gap:8px;flex:1}
+.opacity-label{font-size:9px;letter-spacing:1.5px;color:var(--dim);white-space:nowrap}
+#overlay-opacity-slider{
+  flex:1;-webkit-appearance:none;height:3px;background:var(--border-p);outline:none;cursor:pointer;
+}
+#overlay-opacity-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:0;
+  background:var(--cyan);box-shadow:var(--glow-c);clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%);cursor:pointer;
+}
+#opacity-val{font-size:9px;color:var(--cyan);min-width:26px;text-align:right}
+.util-btn{
+  padding:5px 10px;font-size:9px;letter-spacing:1.5px;cursor:pointer;white-space:nowrap;
+  border:1px solid var(--border-c);background:var(--glass-c);color:var(--text);
+}
+.util-btn.danger{border-color:rgba(255,51,85,.4);color:var(--danger);background:rgba(255,51,85,.08)}
+.util-btn.active{border-color:var(--cyan);color:var(--cyan);box-shadow:var(--glow-c)}
+
+/* Info panel (lives inside dropdown) */
+#info-panel{
+  display:none;padding:10px 14px;background:rgba(0,0,0,.5);border-top:1px solid rgba(140,47,255,.18);
+  font-size:10px;line-height:2;color:var(--dim);
+}
+#info-panel.visible{display:block}
+#info-panel span{color:var(--cyan)}
+
+/* ─── OVERLAY LAYER ──────────────────────────────────────────────────────────── */
+#overlay{
+  position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.5;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;
+}
+#overlay.hidden-overlay{display:none}
+
+/* Key button base */
+.kb{
+  pointer-events:all;cursor:pointer;border:1px solid rgba(15,246,246,.28);
+  background:rgba(9,4,15,.72);color:var(--text);display:flex;
+  align-items:center;justify-content:center;text-align:center;
+  font-family:var(--font);letter-spacing:1px;line-height:1.2;
+  transition:border-color .1s,box-shadow .1s,background .1s;
+  -webkit-tap-highlight-color:transparent;touch-action:none;
+}
+.kb:active,.kb.held{
+  background:rgba(15,246,246,.18);border-color:var(--cyan);
+  box-shadow:var(--glow-c),inset 0 0 8px rgba(15,246,246,.12);color:var(--cyan);
+}
+.kb.purple{border-color:var(--border-p);background:var(--glass-p)}
+.kb.purple:active,.kb.purple.held{
+  background:rgba(140,47,255,.22);border-color:var(--purple);box-shadow:var(--glow-p);color:var(--purple);
+}
+.kb.danger-key{border-color:rgba(255,51,85,.4);background:rgba(255,51,85,.08);color:var(--danger)}
+.kb.danger-key:active{background:rgba(255,51,85,.22);box-shadow:0 0 14px rgba(255,51,85,.5)}
+.kb.green-key{border-color:rgba(0,255,136,.35);background:rgba(0,255,136,.07);color:var(--green)}
+.kb.green-key:active,.kb.green-key.held{background:rgba(0,255,136,.2);box-shadow:var(--glow-g)}
+.kb.wide{grid-column:span 2}
+.kb.tall{grid-row:span 2}
+.kb.sub{font-size:8px;letter-spacing:.5px;opacity:.7}
+
+/* ─── MODE GRIDS ─────────────────────────────────────────────────────────────── */
+.mode-panel{display:none;width:100%;pointer-events:all}
+.mode-panel.active{display:grid}
+
+/* Default Mode */
+#mode-default{
+  grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;
+  width:min(380px,96vw);
+}
+/* Keyboard Mode */
+#mode-keyboard{
+  grid-template-columns:repeat(10,1fr);gap:4px;padding:8px;
+  width:min(600px,98vw);
+}
+/* Gaming Mode */
+#mode-gaming{
+  grid-template-columns:repeat(6,1fr);gap:6px;padding:8px;
+  width:min(420px,96vw);
+}
+/* Creativity Mode */
+#mode-creativity{
+  grid-template-columns:repeat(7,1fr);gap:4px;padding:8px;
+  width:min(480px,96vw);
+}
+
+/* ─── TRACKPAD AREA (full video) ─────────────────────────────────────────────── */
+/* Touch events on video itself act as trackpad — see JS */
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CONNECTION SCREEN
+══════════════════════════════════════════════════════════════════ -->
+<div id="connection-screen">
+  <div class="cs-logo">XEROCLOUD MESH</div>
+  <div class="cs-title">XERO<br>OS</div>
+  <div class="cs-sub">REMOTE STREAM CLIENT · MOBILE OVERLAY</div>
+  <div class="cs-node-row">
+    <input id="cs-node-input" placeholder="ENTER NODE ID" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <button id="copy-node-btn" class="clip-sm" type="button">COPY</button>
+  </div>
+  <button id="cs-connect-btn" class="clip-sm" type="button">CONNECT TO NODE</button>
+  <div id="stream-status-text">ENTER HOST NODE ID TO CONNECT</div>
+  <div id="error-text"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     STREAM SHELL
+══════════════════════════════════════════════════════════════════ -->
+<div id="stream-shell" class="hidden">
+
+  <!-- Top bar -->
+  <div class="stream-topbar">
+    <div class="top-left">
+      <div class="brand">XERO OS</div>
+      <div class="dot"></div>
+      <div id="node-label">NODE: --</div>
+    </div>
+    <div class="top-right">
+      <div id="latency-label">-- MS</div>
+      <button id="stats-btn" class="topbar-btn clip-sm">STATS</button>
+      <button id="end-btn" class="topbar-btn danger clip-sm">END</button>
+    </div>
+  </div>
+
+  <!-- Video + overlay container -->
+  <div id="video-wrap">
+    <video id="remote-stream-video" autoplay playsinline muted></video>
+    <div id="touch-cursor"></div>
+    <div id="video-hint">AWAITING STREAM...</div>
+
+    <!-- Stream stats HUD -->
+    <div id="stream-stats">
+      <div>RES <span id="stat-res">--</span></div>
+      <div>FPS <span id="stat-fps">--</span></div>
+      <div>KBPS <span id="stat-bitrate">--</span></div>
+      <div>ICE <span id="stat-ice">--</span></div>
+    </div>
+
+    <!-- ═══ CONTROL DROPDOWN TOGGLE ═══ -->
+    <button id="ctrl-toggle-btn" class="clip-sm">CONTROLS</button>
+
+    <!-- ═══ CONTROL DROPDOWN ═══ -->
+    <div id="ctrl-dropdown">
+      <!-- Bar 1: Mode selector -->
+      <div class="ctrl-bar">
+        <span class="ctrl-bar-label">MODE</span>
+        <button class="mode-btn clip-sm active" data-mode="default">DEFAULT</button>
+        <button class="mode-btn clip-sm" data-mode="keyboard">KEYBOARD</button>
+        <button class="mode-btn clip-sm" data-mode="gaming">GAMING</button>
+        <button class="mode-btn clip-sm" data-mode="creativity">CREATIVITY</button>
+      </div>
+      <!-- Bar 2: Utilities -->
+      <div class="ctrl-bar">
+        <span class="ctrl-bar-label">OPS</span>
+        <div class="ctrl-util-row">
+          <div class="opacity-group">
+            <span class="opacity-label">OPACITY</span>
+            <input type="range" id="overlay-opacity-slider" min="10" max="100" value="50">
+            <span id="opacity-val">50%</span>
+          </div>
+          <button id="util-end" class="util-btn danger clip-sm">END STREAM</button>
+          <button id="util-report" class="util-btn clip-sm">REPORT</button>
+          <button id="util-info" class="util-btn clip-sm">INFO</button>
+        </div>
+      </div>
+      <!-- Info panel -->
+      <div id="info-panel">
+        <div>FPS <span id="ip-fps">--</span> &nbsp;&nbsp; KBPS <span id="ip-kbps">--</span> &nbsp;&nbsp; ICE <span id="ip-ice">--</span> &nbsp;&nbsp; RES <span id="ip-res">--</span></div>
+        <div>NODE <span id="ip-node">--</span> &nbsp;&nbsp; HOST INPUT <span id="ip-input">READY</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ BUTTON OVERLAY ═══ -->
+    <div id="overlay">
+
+      <!-- DEFAULT MODE -->
+      <div id="mode-default" class="mode-panel active">
+        <button class="kb clip-sm purple" data-key="Escape">ESC</button>
+        <button class="kb clip-sm purple" data-key="Tab">TAB</button>
+        <button class="kb clip-sm green-key" id="btn-lc">L CLICK</button>
+        <button class="kb clip-sm danger-key" id="btn-rc">R CLICK</button>
+      </div>
+
+      <!-- KEYBOARD MODE -->
+      <div id="mode-keyboard" class="mode-panel">
+        <!-- Row 1: Numbers -->
+        <button class="kb clip-sm" data-key="1">1</button>
+        <button class="kb clip-sm" data-key="2">2</button>
+        <button class="kb clip-sm" data-key="3">3</button>
+        <button class="kb clip-sm" data-key="4">4</button>
+        <button class="kb clip-sm" data-key="5">5</button>
+        <button class="kb clip-sm" data-key="6">6</button>
+        <button class="kb clip-sm" data-key="7">7</button>
+        <button class="kb clip-sm" data-key="8">8</button>
+        <button class="kb clip-sm" data-key="9">9</button>
+        <button class="kb clip-sm" data-key="0">0</button>
+        <!-- Row 2: QWERTY top -->
+        <button class="kb clip-sm" data-key="q">Q</button>
+        <button class="kb clip-sm" data-key="w">W</button>
+        <button class="kb clip-sm" data-key="e">E</button>
+        <button class="kb clip-sm" data-key="r">R</button>
+        <button class="kb clip-sm" data-key="t">T</button>
+        <button class="kb clip-sm" data-key="y">Y</button>
+        <button class="kb clip-sm" data-key="u">U</button>
+        <button class="kb clip-sm" data-key="i">I</button>
+        <button class="kb clip-sm" data-key="o">O</button>
+        <button class="kb clip-sm" data-key="p">P</button>
+        <!-- Row 3: Home row -->
+        <button class="kb clip-sm" data-key="a">A</button>
+        <button class="kb clip-sm" data-key="s">S</button>
+        <button class="kb clip-sm" data-key="d">D</button>
+        <button class="kb clip-sm" data-key="f">F</button>
+        <button class="kb clip-sm" data-key="g">G</button>
+        <button class="kb clip-sm" data-key="h">H</button>
+        <button class="kb clip-sm" data-key="j">J</button>
+        <button class="kb clip-sm" data-key="k">K</button>
+        <button class="kb clip-sm" data-key="l">L</button>
+        <button class="kb clip-sm purple" data-key="Backspace">⌫</button>
+        <!-- Row 4: Bottom row -->
+        <button class="kb clip-sm" data-key="z">Z</button>
+        <button class="kb clip-sm" data-key="x">X</button>
+        <button class="kb clip-sm" data-key="c">C</button>
+        <button class="kb clip-sm" data-key="v">V</button>
+        <button class="kb clip-sm" data-key="b">B</button>
+        <button class="kb clip-sm" data-key="n">N</button>
+        <button class="kb clip-sm" data-key="m">M</button>
+        <button class="kb clip-sm" data-key="[">[</button>
+        <button class="kb clip-sm" data-key="]">]</button>
+        <button class="kb clip-sm purple" data-key="Enter">ENTER</button>
+        <!-- Row 5: Modifiers + Space -->
+        <button class="kb clip-sm purple" data-key="Control">CTRL</button>
+        <button class="kb clip-sm purple" data-key="Shift">SHIFT</button>
+        <button class="kb clip-sm purple" data-key="Alt">ALT</button>
+        <button class="kb clip-sm purple wide" data-key=" ">SPACE</button>
+        <button class="kb clip-sm purple" data-key="Escape">ESC</button>
+        <button class="kb clip-sm purple" data-key="Tab">TAB</button>
+        <button class="kb clip-sm" data-key=",">,</button>
+        <button class="kb clip-sm" data-key=".">.</button>
+      </div>
+
+      <!-- GAMING MODE -->
+      <div id="mode-gaming" class="mode-panel">
+        <!-- WASD cluster -->
+        <button class="kb clip-sm" style="grid-column:2" data-key="w">W</button>
+        <button class="kb clip-sm green-key" id="btn-lc-g">L CLK</button>
+        <button class="kb clip-sm danger-key" id="btn-rc-g">R CLK</button>
+        <div></div><!-- empty spacer -->
+        <button class="kb clip-sm" style="grid-column:1" data-key="a">A</button>
+        <button class="kb clip-sm" data-key="s">S</button>
+        <button class="kb clip-sm" data-key="d">D</button>
+        <!-- Arrows -->
+        <button class="kb clip-sm purple" style="grid-column:5" data-key="ArrowUp">▲</button>
+        <div style="grid-column:6"></div>
+        <button class="kb clip-sm purple" data-key="ArrowLeft">◀</button>
+        <button class="kb clip-sm purple" data-key="ArrowDown">▼</button>
+        <button class="kb clip-sm purple" data-key="ArrowRight">▶</button>
+        <!-- Modifiers row -->
+        <button class="kb clip-sm purple" data-key="Shift">SHIFT</button>
+        <button class="kb clip-sm purple" data-key="Control">CTRL</button>
+        <button class="kb clip-sm purple" data-key="Alt">ALT</button>
+        <button class="kb clip-sm purple" data-key="Escape">ESC</button>
+        <button class="kb clip-sm green-key" id="btn-hold-g">HOLD</button>
+        <button class="kb clip-sm danger-key" id="btn-hold-rc-g">H+RC</button>
+      </div>
+
+      <!-- CREATIVITY MODE -->
+      <div id="mode-creativity" class="mode-panel">
+        <!-- Top row: tools -->
+        <button class="kb clip-sm green-key" id="btn-hold-cr">HOLD</button>
+        <button class="kb clip-sm green-key" id="btn-lc-cr">L CLK</button>
+        <button class="kb clip-sm danger-key" id="btn-rc-cr">R CLK</button>
+        <button class="kb clip-sm purple" data-key="Control">CTRL</button>
+        <button class="kb clip-sm purple" data-key="Shift">SHIFT</button>
+        <button class="kb clip-sm purple" data-key="z">Z<span class="sub"> UNDO</span></button>
+        <button class="kb clip-sm purple" data-key="Enter">ENTER</button>
+        <!-- Alpha rows -->
+        <button class="kb clip-sm" data-key="a">A</button>
+        <button class="kb clip-sm" data-key="b">B</button>
+        <button class="kb clip-sm" data-key="c">C</button>
+        <button class="kb clip-sm" data-key="d">D</button>
+        <button class="kb clip-sm" data-key="e">E</button>
+        <button class="kb clip-sm" data-key="f">F</button>
+        <button class="kb clip-sm" data-key="g">G</button>
+        <button class="kb clip-sm" data-key="h">H</button>
+        <button class="kb clip-sm" data-key="i">I</button>
+        <button class="kb clip-sm" data-key="j">J</button>
+        <button class="kb clip-sm" data-key="k">K</button>
+        <button class="kb clip-sm" data-key="l">L</button>
+        <button class="kb clip-sm" data-key="m">M</button>
+        <button class="kb clip-sm" data-key="n">N</button>
+        <button class="kb clip-sm" data-key="o">O</button>
+        <button class="kb clip-sm" data-key="p">P</button>
+        <button class="kb clip-sm" data-key="q">Q</button>
+        <button class="kb clip-sm" data-key="r">R</button>
+        <button class="kb clip-sm" data-key="s">S</button>
+        <button class="kb clip-sm" data-key="t">T</button>
+        <button class="kb clip-sm" data-key="u">U</button>
+        <button class="kb clip-sm" data-key="v">V</button>
+        <button class="kb clip-sm" data-key="w">W</button>
+        <button class="kb clip-sm" data-key="x">X</button>
+        <button class="kb clip-sm" data-key="y">Y</button>
+        <button class="kb clip-sm purple" data-key="Backspace">⌫</button>
+      </div>
+    </div><!-- #overlay -->
+  </div><!-- #video-wrap -->
+</div><!-- #stream-shell -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════
+const API = 'http://localhost:5000';
+const SESSION_POLL_MS = 1500;
+const STUN_SERVERS = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' }
+]};
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+const STATE = {
+  mode: 'default',          // active controller mode
+  overlayOpacity: 0.5,      // 0.1 – 1.0
+  holdActive: false,        // sustained mouse-down hold
+  mouseHeldBtn: null,       // 'left' | 'right' currently held
+  ctrlDropdownOpen: false,
+  infoPanelOpen: false,
+  // session
+  nodeId: null, requestId: null, clientId: null,
+  hostIceCount: 0, answerSent: false, endingSession: false,
+  // stream
+  nativeW: 1920, nativeH: 1080, cursorX: 960, cursorY: 540,
+};
+
+let peerConnection = null, dataChannel = null;
+let sessionPollTimer = null, statsTimer = null, disconnectTimer = null;
+
+// ═══════════════════════════════════════════════════════════════
+//  DOM HELPERS
+// ═══════════════════════════════════════════════════════════════
+const $ = (id) => document.getElementById(id);
+const setStatus = (t) => $('stream-status-text').textContent = t.toUpperCase();
+const setError  = (t) => $('error-text').textContent = t || '';
+const setConnectDisabled = (v) => $('cs-connect-btn').disabled = v;
+
+// ═══════════════════════════════════════════════════════════════
+//  NETWORK HELPERS
+// ═══════════════════════════════════════════════════════════════
+async function apiReq(path, method = 'GET', body = null) {
+  const cleanPath = path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : '/'+path}`;
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + cleanPath, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PACKET SEND
+// ═══════════════════════════════════════════════════════════════
+function sendPacket(pkt) {
+  if (dataChannel && dataChannel.readyState === 'open')
+    dataChannel.send(JSON.stringify(pkt));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MOUSE INPUT HELPERS
+// ═══════════════════════════════════════════════════════════════
+function doLeftClick() {
+  sendPacket({ t: 'mc', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn: 'left' });
+}
+function doRightClick() {
+  sendPacket({ t: 'mc', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn: 'right' });
+}
+function startHold(btn = 'left') {
+  if (STATE.holdActive) return;
+  STATE.holdActive = true;
+  STATE.mouseHeldBtn = btn;
+  sendPacket({ t: 'md', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn });
+  // Visual feedback on hold buttons
+  document.querySelectorAll('#btn-hold-g,#btn-hold-cr').forEach(b => b.classList.add('held'));
+}
+function releaseHold() {
+  if (!STATE.holdActive) return;
+  STATE.holdActive = false;
+  sendPacket({ t: 'mu', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn: STATE.mouseHeldBtn });
+  STATE.mouseHeldBtn = null;
+  document.querySelectorAll('#btn-hold-g,#btn-hold-cr').forEach(b => b.classList.remove('held'));
+}
+function doHoldRightClick() {
+  // Macro: hold left + right click simultaneously
+  sendPacket({ t: 'md', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn: 'left' });
+  setTimeout(() => {
+    sendPacket({ t: 'mc', x: Math.round(STATE.cursorX), y: Math.round(STATE.cursorY), btn: 'right' });
+  }, 60);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TRACKPAD / VIDEO TOUCH HANDLING
+// ═══════════════════════════════════════════════════════════════
+function mapPoint(clientX, clientY) {
+  const rect = $('remote-stream-video').getBoundingClientRect();
+  return {
+    x: Math.round(Math.max(0, Math.min(1, (clientX - rect.left)  / rect.width))  * STATE.nativeW),
+    y: Math.round(Math.max(0, Math.min(1, (clientY - rect.top)   / rect.height)) * STATE.nativeH),
+  };
+}
+let trackpadLast = null;
+const video  = $('remote-stream-video');
+const cursor = $('touch-cursor');
+
+video.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t = e.touches[0], p = mapPoint(t.clientX, t.clientY);
+  STATE.cursorX = p.x; STATE.cursorY = p.y;
+  sendPacket({ t: 'mm', x: p.x, y: p.y });
+  cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
+  cursor.classList.add('visible');
+  trackpadLast = { x: t.clientX, y: t.clientY, at: Date.now() };
+}, { passive: false });
+
+video.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const t = e.touches[0], p = mapPoint(t.clientX, t.clientY);
+  STATE.cursorX = p.x; STATE.cursorY = p.y;
+  sendPacket({ t: 'mm', x: p.x, y: p.y });
+  cursor.style.left = t.clientX+'px'; cursor.style.top = t.clientY+'px';
+}, { passive: false });
+
+video.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  cursor.classList.remove('visible');
+  if (trackpadLast && Date.now() - trackpadLast.at < 200) {
+    // Short tap = left click (standard trackpad behaviour)
+    doLeftClick();
+  }
+  trackpadLast = null;
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════════
+//  KEY BUTTON WIRING
+// ═══════════════════════════════════════════════════════════════
+function wireKeyButtons() {
+  document.querySelectorAll('.kb[data-key]').forEach((btn) => {
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      sendPacket({ t: 'kd', k: btn.dataset.key });
+    }, { passive: false });
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      sendPacket({ t: 'ku', k: btn.dataset.key });
+    }, { passive: false });
+    // Mouse fallback (desktop testing)
+    btn.addEventListener('mousedown', (e) => { e.preventDefault(); sendPacket({ t: 'kd', k: btn.dataset.key }); });
+    btn.addEventListener('mouseup',   (e) => { e.preventDefault(); sendPacket({ t: 'ku', k: btn.dataset.key }); });
+  });
+}
+
+// Wire click/hold buttons (IDs, re-usable across modes)
+function wireSpecialButtons() {
+  // Left-click buttons (all modes)
+  ['btn-lc','btn-lc-g','btn-lc-cr'].forEach(id => {
+    const el = $(id); if (!el) return;
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); doLeftClick(); }, { passive: false });
+    el.addEventListener('mousedown',  (e) => { e.preventDefault(); doLeftClick(); });
+  });
+  // Right-click buttons
+  ['btn-rc','btn-rc-g','btn-rc-cr'].forEach(id => {
+    const el = $(id); if (!el) return;
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); doRightClick(); }, { passive: false });
+    el.addEventListener('mousedown',  (e) => { e.preventDefault(); doRightClick(); });
+  });
+  // Hold toggle
+  ['btn-hold-g','btn-hold-cr'].forEach(id => {
+    const el = $(id); if (!el) return;
+    el.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      STATE.holdActive ? releaseHold() : startHold('left');
+    }, { passive: false });
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      STATE.holdActive ? releaseHold() : startHold('left');
+    });
+  });
+  // Hold + Right Click macro
+  const holdRc = $('btn-hold-rc-g');
+  if (holdRc) {
+    holdRc.addEventListener('touchstart', (e) => { e.preventDefault(); doHoldRightClick(); }, { passive: false });
+    holdRc.addEventListener('mousedown',  (e) => { e.preventDefault(); doHoldRightClick(); });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MODE SWITCHING
+// ═══════════════════════════════════════════════════════════════
+const MODES = ['default','keyboard','gaming','creativity'];
+const SIZES = { default: 52, keyboard: 34, gaming: 48, creativity: 36 };
+
+function switchMode(mode) {
+  if (!MODES.includes(mode)) return;
+  STATE.mode = mode;
+  // Swap active panel
+  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+  $('mode-'+mode).classList.add('active');
+  // Update mode buttons
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  // Dynamic key size scaling
+  const sz = SIZES[mode];
+  document.querySelectorAll('.kb').forEach(btn => {
+    btn.style.minHeight = sz+'px';
+    btn.style.fontSize  = Math.max(8, sz * 0.22)+'px';
+  });
+  // Close dropdown
+  closeDropdown();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DROPDOWN / UI CONTROLS
+// ═══════════════════════════════════════════════════════════════
+function openDropdown() {
+  STATE.ctrlDropdownOpen = true;
+  $('ctrl-dropdown').classList.add('open');
+  $('ctrl-toggle-btn').classList.add('open');
+}
+function closeDropdown() {
+  STATE.ctrlDropdownOpen = false;
+  $('ctrl-dropdown').classList.remove('open');
+  $('ctrl-toggle-btn').classList.remove('open');
+}
+
+$('ctrl-toggle-btn').addEventListener('click', () => {
+  STATE.ctrlDropdownOpen ? closeDropdown() : openDropdown();
+});
+
+// Close dropdown when touching video
+video.addEventListener('touchstart', () => { if (STATE.ctrlDropdownOpen) closeDropdown(); }, { passive: true });
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); switchMode(btn.dataset.mode); }, { passive: false });
+});
+
+// Opacity slider
+const slider = $('overlay-opacity-slider');
+const overlay = $('overlay');
+slider.addEventListener('input', () => {
+  const v = parseInt(slider.value);
+  STATE.overlayOpacity = v / 100;
+  overlay.style.opacity = STATE.overlayOpacity;
+  $('opacity-val').textContent = v+'%';
+});
+
+// Utility buttons
+$('util-end').addEventListener('click',    () => handleStreamEnd('user disconnected', true));
+$('util-report').addEventListener('click', () => alert('REPORT SUBMITTED — SESSION FLAGGED'));
+$('util-info').addEventListener('click', () => {
+  STATE.infoPanelOpen = !STATE.infoPanelOpen;
+  $('info-panel').classList.toggle('visible', STATE.infoPanelOpen);
+  $('util-info').classList.toggle('active', STATE.infoPanelOpen);
+});
+
+// Stats toggle (top bar)
+$('stats-btn').addEventListener('click', () => $('stream-stats').classList.toggle('visible'));
+$('end-btn').addEventListener('click', () => handleStreamEnd('user disconnected', true));
+
+// ═══════════════════════════════════════════════════════════════
+//  SESSION / WEBRTC
+// ═══════════════════════════════════════════════════════════════
+function stopPolling() { if (sessionPollTimer) clearInterval(sessionPollTimer); sessionPollTimer = null; }
+function closePeer()   { if (peerConnection) peerConnection.close(); peerConnection = null; dataChannel = null; }
+
+function resetSession() {
+  stopPolling(); clearInterval(statsTimer); clearTimeout(disconnectTimer); closePeer();
+  STATE.requestId = null; STATE.clientId = null;
+  STATE.hostIceCount = 0; STATE.answerSent = false; STATE.endingSession = false;
+}
+
+async function connectSignaling(nodeId) {
+  resetSession(); STATE.nodeId = nodeId;
+  setError(''); setConnectDisabled(true); setStatus('creating stream request...');
+  try {
+    const info = { email: localStorage.getItem('xc_user_email') || 'Anonymous Client', client: 'xeroos-remote' };
+    const data = await apiReq('/stream/request', 'POST', { nodeId, requesterInfo: info });
+    STATE.requestId = data.requestId; STATE.clientId = data.clientId;
+    setStatus('request sent — waiting for host acceptance...');
+    startPolling();
+  } catch (err) {
+    setError('REQUEST FAILED: ' + err.message); setConnectDisabled(false);
+  }
+}
+
+function startPolling() {
+  stopPolling();
+  const poll = async () => {
+    if (!STATE.requestId || STATE.endingSession) return;
+    try { const d = await apiReq(`/stream/${STATE.requestId}`); await syncSession(d.request); }
+    catch (err) { console.warn('[REST] poll:', err.message); }
+  };
+  poll();
+  sessionPollTimer = setInterval(poll, SESSION_POLL_MS);
+}
+
+async function syncSession(session) {
+  if (!session) return;
+  if (session.status === 'pending')  { setStatus('waiting for host operator...'); return; }
+  if (session.status === 'rejected') { handleStreamEnd('request rejected by host', false); return; }
+  if (session.status === 'ended')    { handleStreamEnd('host ended the stream', false); return; }
+  if (session.status === 'accepted' && !peerConnection) initPeerConnection();
+  if (session.status === 'accepted' && !session.offer)  { setStatus('access granted — awaiting host offer...'); return; }
+  if (session.offer && !STATE.answerSent) {
+    if (!peerConnection) initPeerConnection();
+    try {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(session.offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await apiReq(`/stream/${STATE.requestId}/answer`, 'POST', { answer, clientId: STATE.clientId });
+      STATE.answerSent = true;
+      setStatus('answer sent — establishing p2p tunnel...');
+    } catch (err) { setError('HANDSHAKE FAILED: ' + err.message); return; }
+  }
+  if (peerConnection && peerConnection.currentRemoteDescription) {
+    const hostIce = session.hostIce || [];
+    for (let i = STATE.hostIceCount; i < hostIce.length; i++) {
+      try { await peerConnection.addIceCandidate(new RTCIceCandidate(hostIce[i])); }
+      catch (err) { console.warn('[ICE] skipped candidate', i, err.message); }
+    }
+    STATE.hostIceCount = hostIce.length;
+  }
+}
+
+function initPeerConnection() {
+  closePeer();
+  const pc = new RTCPeerConnection(STUN_SERVERS);
+  peerConnection = pc;
+  pc.ondatachannel = (event) => {
+    if (event.channel.label !== 'inputChannel') return;
+    dataChannel = event.channel;
+    dataChannel.onopen  = () => { setStatus('input channel active'); $('ip-input').textContent = 'ACTIVE'; };
+    dataChannel.onclose = () => { $('ip-input').textContent = 'CLOSED'; };
+  };
+  pc.onicecandidate = (event) => {
+    if (!event.candidate || !STATE.requestId || !STATE.clientId) return;
+    apiReq(`/stream/${STATE.requestId}/ice`, 'POST', { role: 'client', clientId: STATE.clientId, candidate: event.candidate })
+      .catch(err => console.warn('[ICE] upload failed:', err.message));
+  };
+  pc.oniceconnectionstatechange = () => {
+    const s = pc.iceConnectionState;
+    $('stat-ice').textContent = s.toUpperCase();
+    $('ip-ice').textContent = s.toUpperCase();
+    $('node-label').textContent = `NODE: ${STATE.nodeId} · ${s.toUpperCase()}`;
+    if (s === 'connected' || s === 'completed') { clearTimeout(disconnectTimer); setStatus('streaming active'); }
+    if (s === 'disconnected') {
+      setStatus('signal interrupted — attempting recovery...');
+      clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(() => handleStreamEnd('connection lost'), 12000);
+    }
+    if (s === 'failed') handleStreamEnd('connection failed');
+  };
+  pc.ontrack = (event) => {
+    if (!event.streams || !event.streams[0]) return;
+    const vid = $('remote-stream-video');
+    vid.muted = true; vid.playsInline = true; vid.autoplay = true;
+    vid.srcObject = event.streams[0];
+    vid.onloadedmetadata = () => {
+      STATE.nativeW = vid.videoWidth  || 1920;
+      STATE.nativeH = vid.videoHeight || 1080;
+      STATE.cursorX = STATE.nativeW / 2;
+      STATE.cursorY = STATE.nativeH / 2;
+      $('stat-res').textContent = `${STATE.nativeW}×${STATE.nativeH}`;
+      $('ip-res').textContent   = `${STATE.nativeW}×${STATE.nativeH}`;
+      $('video-hint').style.display = 'none';
+      $('connection-screen').classList.add('hidden');
+      $('stream-shell').classList.remove('hidden');
+      $('node-label').textContent = `NODE: ${STATE.nodeId}`;
+      $('ip-node').textContent    = STATE.nodeId;
+      vid.play().catch(() => document.body.addEventListener('touchstart', () => vid.play().catch(()=>{}), { once: true }));
+      startStatsPolling();
+    };
+  };
+}
+
+function handleStreamEnd(reason, notifyServer = true) {
+  const rid = STATE.requestId;
+  STATE.endingSession = true;
+  stopPolling(); clearInterval(statsTimer); clearTimeout(disconnectTimer);
+  releaseHold();
+  closePeer();
+  if (notifyServer && rid) apiReq(`/stream/${rid}/end`, 'POST', {}).catch(()=>{});
+  STATE.requestId = null; STATE.clientId = null;
+  STATE.answerSent = false; STATE.hostIceCount = 0;
+  $('stream-shell').classList.add('hidden');
+  $('connection-screen').classList.remove('hidden');
+  setStatus('stream ended: ' + reason);
+  setConnectDisabled(false);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STATS POLLING — feeds both HUD panels
+// ═══════════════════════════════════════════════════════════════
+function startStatsPolling() {
+  clearInterval(statsTimer);
+  let lastBytes = 0, lastTime = Date.now();
+  statsTimer = setInterval(async () => {
+    if (!peerConnection) return;
+    const stats = await peerConnection.getStats().catch(() => null);
+    if (!stats) return;
+    stats.forEach((r) => {
+      if (r.type === 'inbound-rtp' && r.kind === 'video') {
+        const now = Date.now();
+        const sec = Math.max(0.1, (now - lastTime) / 1000);
+        const bytes = Math.max(0, (r.bytesReceived || 0) - lastBytes);
+        const kbps = Math.round((bytes * 8) / sec / 1000);
+        const fps  = Math.round(r.framesPerSecond || 0);
+        $('stat-bitrate').textContent = kbps;
+        $('stat-fps').textContent     = fps;
+        $('ip-fps').textContent       = fps;
+        $('ip-kbps').textContent      = kbps;
+        lastBytes = r.bytesReceived || lastBytes;
+        lastTime  = now;
+      }
+    });
+  }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONNECTION SCREEN CONTROLS
+// ═══════════════════════════════════════════════════════════════
+$('cs-connect-btn').addEventListener('click', () => {
+  const nodeId = $('cs-node-input').value.trim().toUpperCase();
+  if (!nodeId) { setError('PLEASE ENTER A NODE ID'); return; }
+  connectSignaling(nodeId);
+});
+$('cs-node-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('cs-connect-btn').click(); });
+$('copy-node-btn').addEventListener('click', () => {
+  const v = $('cs-node-input').value.trim();
+  if (v) navigator.clipboard.writeText(v).catch(()=>{});
+});
+
+// ─── URL params ────────────────────────────────────────────────
+const params = new URLSearchParams(window.location.search);
+const nodeParam = params.get('node'), tokenParam = params.get('token'), emailParam = params.get('email');
+if (tokenParam) localStorage.setItem('xc_auth_token', tokenParam);
+if (emailParam) localStorage.setItem('xc_user_email', emailParam);
+if (nodeParam) {
+  $('cs-node-input').value = nodeParam.toUpperCase();
+  setTimeout(() => connectSignaling(nodeParam.toUpperCase()), 500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+wireKeyButtons();
+wireSpecialButtons();
+switchMode('default'); // set initial key sizes
+</script>
+</body>
+</html>
